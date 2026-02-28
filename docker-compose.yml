@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  monitoring-bases:
+    container_name: pe-bot-noc-monitoring-bases
+    image: noc-monitoring-bases:1
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      # Para persistir logs y datos extraídos
+      - ./logs:/app/logs
+    healthcheck:
+      test: [ "CMD", "pgrep", "-f", "noc-monitoring" ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    # Limitar recursos para aplicación SOAP
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.3'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+    # Logging configurado para Docker
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    networks:
+      - pe-noc-monitoring-network
+
+    env_file:
+      - .env
+networks:
+  pe-noc-monitoring-network:
+    name: pe-noc-monitoring-network
+    external: true
+
+  my_bridge:
+    external: true
+
